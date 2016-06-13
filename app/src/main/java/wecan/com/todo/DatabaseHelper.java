@@ -107,13 +107,34 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return refsSignUpsList;
     }
 
-    private void deleteToDo(String id){
+    private void deleteToDo(ToDo toDo){
+        //Delete ToDo from ToDoEntry table
         SQLiteDatabase sqLiteDatabase = getReadableDatabase();
+        sqLiteDatabase.delete(ToDoEntryContract.ToDoEntry.TABLE_NAME,
+                ToDoEntryContract.ToDoEntry._ID + " = ?",
+                new String[]{String.valueOf(toDo.getId())});
+        sqLiteDatabase.close();
 
+        //Insert deleted todo into ToDoDeleted table
+        sqLiteDatabase = getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(ToDoEntryContract.COLUMN_TITLE, toDo.getTitle());
+        contentValues.put(ToDoEntryContract.COLUMN_DETAILS, toDo.getDetails());
+        contentValues.put(ToDoEntryContract.COLUMN_TIME, toDo.getTime());
+        contentValues.put(ToDoEntryContract.COLUMN_DATE, toDo.getDate());
+        contentValues.put(ToDoEntryContract.COLUMN_PCOLOR_NAME, toDo.getPriorityColor());
+
+        sqLiteDatabase.insert(ToDoEntryContract.ToDoDelete.TABLE_NAME,null,contentValues);
+
+        sqLiteDatabase.close();
     }
 
-    private void deleteDeletedToDo(String id){
+    private void deleteDeletedToDo(int id){
         SQLiteDatabase sqLiteDatabase = getReadableDatabase();
+        sqLiteDatabase.delete(ToDoEntryContract.ToDoDelete.TABLE_NAME,
+                ToDoEntryContract.ToDoDelete._ID + " = ?",
+                new String[]{String.valueOf(id)});
+        sqLiteDatabase.close();
     }
 
     private List<ToDo> getSavedToDos(){
@@ -178,8 +199,69 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return toDoList;
     }
 
-    private List<ToDo> getAllToDoByPriority(String priority){
+    private List<ToDo> getSavedToDoByPriority(String priority){
         List<ToDo> toDoList = new ArrayList<>();
+        SQLiteDatabase sqLiteDatabase = getReadableDatabase();
+        String query = "SELECT * FROM " + ToDoEntryContract.ToDoEntry.TABLE_NAME +
+                "WHERE " + ToDoEntryContract.COLUMN_PCOLOR_NAME + " = " + priority;
+        Cursor cursor = sqLiteDatabase.rawQuery(query,null);
+        if(cursor.moveToFirst()){
+            do{
+                ToDo toDo = new ToDo();
+
+                toDo.setTitle(cursor.getString(cursor.getColumnIndexOrThrow(ToDoEntryContract.COLUMN_TITLE)));
+                toDo.setDetails(cursor.getString(cursor.getColumnIndexOrThrow(ToDoEntryContract.COLUMN_DETAILS)));
+                toDo.setDate(cursor.getString(cursor.getColumnIndexOrThrow(ToDoEntryContract.COLUMN_DATE)));
+                toDo.setTime(cursor.getString(cursor.getColumnIndexOrThrow(ToDoEntryContract.COLUMN_TIME)));
+                toDo.setPriorityColor(cursor.getString(cursor.getColumnIndexOrThrow(ToDoEntryContract.COLUMN_PCOLOR_NAME)));
+
+                toDoList.add(toDo);
+            } while (cursor.moveToNext());
+        }
+
+        cursor.close();
+        sqLiteDatabase.close();
+
+        return toDoList;
+    }
+
+    private List<ToDo> getDeletedToDoByPriority(String priority){
+        List<ToDo> toDoList = new ArrayList<>();
+        String [] coloumns = {
+                ToDoEntryContract.COLUMN_PCOLOR_NAME,
+                ToDoEntryContract.COLUMN_TIME,
+                ToDoEntryContract.COLUMN_DATE,
+                ToDoEntryContract.COLUMN_DETAILS,
+                ToDoEntryContract.COLUMN_TITLE
+        };
+        String selection = ToDoEntryContract.COLUMN_PCOLOR_NAME +"=?";
+
+        SQLiteDatabase sqLiteDatabase = getReadableDatabase();
+        Cursor cursor = sqLiteDatabase.query(
+                ToDoEntryContract.ToDoDelete.TABLE_NAME,
+                coloumns,
+                selection,
+                new String[]{priority},
+                null,
+                null,
+                null
+        );
+
+        if(cursor.moveToFirst()){
+            do{
+                ToDo toDo = new ToDo();
+                toDo.setTitle(cursor.getString(cursor.getColumnIndexOrThrow(ToDoEntryContract.COLUMN_TITLE)));
+                toDo.setDetails(cursor.getString(cursor.getColumnIndexOrThrow(ToDoEntryContract.COLUMN_DETAILS)));
+                toDo.setTime(cursor.getString(cursor.getColumnIndexOrThrow(ToDoEntryContract.COLUMN_TITLE)));
+                toDo.setDate(cursor.getString(cursor.getColumnIndexOrThrow(ToDoEntryContract.COLUMN_DATE)));
+                toDo.setPriorityColor(cursor.getString(cursor.getColumnIndexOrThrow(ToDoEntryContract.COLUMN_PCOLOR_NAME)));
+
+                toDoList.add(toDo);
+            } while (cursor.moveToNext());
+        }
+
+        cursor.close();
+        sqLiteDatabase.close();
 
         return toDoList;
     }
