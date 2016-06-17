@@ -108,7 +108,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     private void deleteToDo(ToDo toDo){
-        //Delete ToDo from ToDoEntry table
+        // Delete ToDo from ToDoEntry table
         SQLiteDatabase sqLiteDatabase = getReadableDatabase();
         sqLiteDatabase.delete(ToDoEntryContract.ToDoEntry.TABLE_NAME,
                 ToDoEntryContract.ToDoEntry._ID + " = ?",
@@ -125,7 +125,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         contentValues.put(ToDoEntryContract.COLUMN_PCOLOR_NAME, toDo.getPriorityColor());
 
         sqLiteDatabase.insert(ToDoEntryContract.ToDoDelete.TABLE_NAME,null,contentValues);
-
         sqLiteDatabase.close();
     }
 
